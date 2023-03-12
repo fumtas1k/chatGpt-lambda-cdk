@@ -1,16 +1,45 @@
-import * as cdk from 'aws-cdk-lib';
+import { Stack, StackProps, RemovalPolicy, Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { AssetCode, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { EndpointType, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 
-export class ChatGptLambdaCdkStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class ChatGptLambdaCdkStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const lambdaRole = new Role(this, "lambdaRole", {
+      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess")],
+      assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'ChatGptLambdaCdkQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+
+    const dynamoTable = new Table(this, 'chats', {
+      partitionKey: {
+        name: "id",
+        type: AttributeType.STRING
+      },
+      tableName: "chats",
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    const lambda = new Function(this, "getItem", {
+      functionName: "getItem",
+      handler: "chatgpt.lambda_handler",
+      runtime: Runtime.RUBY_2_7,
+      code: new AssetCode("function"),
+      memorySize: 512,
+      timeout: Duration.seconds(10),
+    });
+
+    const apiGw = new RestApi(this, "apiGw", {
+      endpointTypes: [EndpointType.REGIONAL],
+      deployOptions: {
+        stageName: "dev1",
+      }
+    });
+    const chatGpt = apiGw.root.addResource("get");
+    chatGpt.addMethod("GET", new LambdaIntegration(lambda));
   }
 }
