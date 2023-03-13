@@ -10,8 +10,8 @@ export class ChatGptLambdaCdkStack extends Stack {
     super(scope, id, props);
 
     const lambdaRole = new Role(this, "lambdaRole", {
-      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess")],
-      assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
+      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"),],
+      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     });
 
 
@@ -31,6 +31,7 @@ export class ChatGptLambdaCdkStack extends Stack {
       code: new AssetCode("function"),
       memorySize: 512,
       timeout: Duration.seconds(10),
+      role: lambdaRole,
     });
 
     const apiGw = new RestApi(this, "apiGw", {
