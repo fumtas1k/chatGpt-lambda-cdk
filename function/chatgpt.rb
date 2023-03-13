@@ -1,7 +1,7 @@
 require "aws-sdk-dynamodb"
 require "dotenv"
 require "json"
-require "ruby-openai"
+require "openai"
 
 REGION = "ap-northeast-1"
 TABLE_NAME = "chats"
@@ -19,8 +19,6 @@ def lambda_handler(event:, context:)
   begin
     response = dynamodb.scan(params)
     items = response.items.filter { _1["room_id"] == "1234" }.take(2)
-
-    # 取得したレコードの出力
     return items.to_json
   rescue Aws::DynamoDB::Errors::ServiceError => error
     puts "Unable to scan table: #{error.message}"
