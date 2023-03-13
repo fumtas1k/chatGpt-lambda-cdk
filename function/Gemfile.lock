@@ -25,6 +25,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-22
+  ruby
 
 DEPENDENCIES
   aws-sdk-dynamodb
